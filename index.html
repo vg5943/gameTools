@@ -105,6 +105,36 @@
             margin-bottom: 20px;
         }
 
+        .filters-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .filters-header h2 {
+            margin: 0;
+        }
+
+        #reset-filters {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background-color: var(--button-bg-color);
+            color: var(--text-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+            font-size: 0.9em;
+        }
+
+        #reset-filters:hover {
+            background-color: var(--button-hover-bg-color);
+        }
+
+        #reset-filters:active {
+            background-color: var(--button-active-bg-color);
+        }
+
         .filter-group {
             margin-bottom: 15px;
         }
@@ -370,11 +400,14 @@
         <header>
             <h1>Arknights: Endfield Weapon Filter</h1>
             <p>A filter for weapons in Arknights: Endfield.</p>
-            <p>I created this because I don't want to unintentionally feed good essence on a random weapon</p>
             <div id="theme-toggle" title="Toggle Theme"></div>
         </header>
 
         <div class="filters">
+            <div class="filters-header">
+                <h2>Filters</h2>
+                <button id="reset-filters">Reset</button>
+            </div>
             <div class="filter-group">
                 <h3>Weapon Type</h3>
                 <div id="type-filters" class="filter-buttons"></div>
@@ -439,6 +472,7 @@
             const essenceFilters = document.getElementById('essence-filters');
             const searchBar = document.getElementById('search-bar');
             const themeToggle = document.getElementById('theme-toggle');
+            const resetFiltersBtn = document.getElementById('reset-filters');
 
             let weapons = [];
             let filters = {
@@ -472,6 +506,28 @@
             // Load initial theme
             applyTheme(localStorage.getItem('theme') || 'dark');
 
+            // Reset filters functionality
+            resetFiltersBtn.addEventListener('click', () => {
+                // Clear all filter values
+                filters = {
+                    type: null,
+                    attribute: null,
+                    secondary: null,
+                    essence: null,
+                    search: ''
+                };
+
+                // Remove active class from all filter buttons
+                document.querySelectorAll('.filter-buttons button.active').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Clear search bar
+                searchBar.value = '';
+
+                // Re-render with all weapons
+                applyFilters();
+            });
 
             fetch('weaponData.json')
                 .then(response => response.json())
