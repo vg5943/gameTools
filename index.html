@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arknights: Endfield Weapon Filter</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg-color: #1e1e1e;
+            --border-color: #333;
+            --header-bg-color: #2a2a2a;
+            --button-bg-color: #333;
+            --button-hover-bg-color: #444;
+            --button-active-bg-color: #555;
+            --rarity-6-glow: rgba(255, 112, 0, 0.3);
+            --rarity-6-line: #ff7000;
+            --rarity-5-glow: rgba(255, 186, 3, 0.3);
+            --rarity-5-line: #ffba03;
+            --rarity-4-glow: rgba(148, 81, 248, 0.3);
+            --rarity-4-line: #9451f8;
+            --rarity-3-glow: rgba(90, 196, 250, 0.3);
+            --rarity-3-line: #5ac4fa;
+            --footer-text-color: #666;
+        }
+
+        .light-mode {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --card-bg-color: #ffffff;
+            --border-color: #ddd;
+            --header-bg-color: #e0e0e0;
+            --button-bg-color: #e0e0e0;
+            --button-hover-bg-color: #d0d0d0;
+            --button-active-bg-color: #c0c0c0;
+            --footer-text-color: #999;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: var(--header-bg-color);
+            border-radius: 8px;
+            position: relative;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        /* Theme Toggle Switch */
+        #theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            width: 60px;
+            height: 30px;
+            background-color: var(--button-bg-color);
+            border-radius: 15px;
+            border: 2px solid var(--border-color);
+            transition: background-color 0.3s;
+        }
+
+        #theme-toggle:hover {
+            background-color: var(--button-hover-bg-color);
+        }
+
+        #theme-toggle::before {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background-color: var(--text-color);
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .light-mode #theme-toggle::before {
+            transform: translateX(30px);
+        }
+
+        .filters {
+            background-color: var(--card-bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            margin-bottom: 15px;
+        }
+
+        .filter-group h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-buttons button {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            background-color: var(--button-bg-color);
+            color: var(--text-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .filter-buttons button:hover {
+            background-color: var(--button-hover-bg-color);
+        }
+
+        .filter-buttons button.active {
+            background-color: var(--button-active-bg-color);
+            font-weight: bold;
+        }
+        
+        #search-bar {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--button-bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        #weapon-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+            min-height: 500px;
+            padding-bottom: 50px;
+        }
+
+        .weapon-item {
+            width: 72px;
+            height: 72px;
+            position: relative;
+            display: inline-block;
+            border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .weapon-item.rarity-6 {
+            background: linear-gradient(to top, var(--rarity-6-glow), rgba(255, 112, 0, 0));
+        }
+        .weapon-item.rarity-5 {
+            background: linear-gradient(to top, var(--rarity-5-glow), rgba(255, 186, 3, 0));
+        }
+        .weapon-item.rarity-4 {
+            background: linear-gradient(to top, var(--rarity-4-glow), rgba(148, 81, 248, 0));
+        }
+        .weapon-item.rarity-3 {
+            background: linear-gradient(to top, var(--rarity-3-glow), rgba(90, 196, 250, 0));
+        }
+
+        .weapon-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+
+        .weapon-item.rarity-6::after { background-color: var(--rarity-6-line); }
+        .weapon-item.rarity-5::after { background-color: var(--rarity-5-line); }
+        .weapon-item.rarity-4::after { background-color: var(--rarity-4-line); }
+        .weapon-item.rarity-3::after { background-color: var(--rarity-3-line); }
+
+        .weapon-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .weapon-name {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-shadow: 1px 1px 3px black;
+            text-align: center;
+            width: 100%;
+        }
+
+        #weapon-hover-card {
+            position: absolute;
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            max-width: 350px;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        #card-icon {
+            width: 48px;
+            height: 48px;
+            margin-right: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            position: relative;
+        }
+        #card-icon::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -1px;
+            width: 3px;
+            height: 100%;
+        }
+        #card-icon.rarity-6::after { background-color: var(--rarity-6-line); }
+        #card-icon.rarity-5::after { background-color: var(--rarity-5-line); }
+        #card-icon.rarity-4::after { background-color: var(--rarity-4-line); }
+        #card-icon.rarity-3::after { background-color: var(--rarity-3-line); }
+
+        #card-icon.rarity-6 {
+            background: linear-gradient(to top, var(--rarity-6-glow), rgba(255, 112, 0, 0));
+        }
+        #card-icon.rarity-5 {
+            background: linear-gradient(to top, var(--rarity-5-glow), rgba(255, 186, 3, 0));
+        }
+        #card-icon.rarity-4 {
+            background: linear-gradient(to top, var(--rarity-4-glow), rgba(148, 81, 248, 0));
+        }
+        #card-icon.rarity-3 {
+            background: linear-gradient(to top, var(--rarity-3-glow), rgba(90, 196, 250, 0));
+        }
+
+        .card-title-info {
+            flex-grow: 1;
+        }
+
+        #card-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--text-color);
+        }
+
+        #card-rarity-type {
+            font-size: 0.9em;
+            color: #aaa;
+            font-weight: bold;
+        }
+
+        .card-body {
+            margin-bottom: 10px;
+        }
+
+        #card-main-attribute, #card-secondary-stat, #card-passive-skill-name {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            color: #e0e0e0;
+        }
+        #card-passive-skill-description {
+            font-style: normal;
+            color: #e0e0e0;
+            font-size: 0.8em;
+            margin-top: 5px;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        #card-description {
+            font-style: italic;
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 10px;
+            max-height: 100px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+
+        .card-footer {
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        /* Footer Styles */
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 50px;
+            font-size: 0.85em;
+            color: var(--footer-text-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        footer p {
+            margin: 5px 0;
+        }
+
+        footer a {
+            color: var(--footer-text-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: var(--text-color);
+        }
+
+        footer img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        footer a:hover img {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Arknights: Endfield Weapon Filter</h1>
+            <p>A filter for weapons in Arknights: Endfield.</p>
+            <p>I created this because I don't want to unintentionally feed good essence on a random weapon</p>
+            <div id="theme-toggle" title="Toggle Theme"></div>
+        </header>
+
+        <div class="filters">
+            <div class="filter-group">
+                <h3>Weapon Type</h3>
+                <div id="type-filters" class="filter-buttons"></div>
+            </div>
+            <div class="filter-group">
+                <h3>Attribute Stats</h3>
+                <div id="attribute-filters" class="filter-buttons"></div>
+            </div>
+            <div class="filter-group">
+                <h3>Secondary Stats</h3>
+                <div id="secondary-filters" class="filter-buttons"></div>
+            </div>
+            <div class="filter-group">
+                <h3>Essence Skill Stats</h3>
+                <div id="essence-filters" class="filter-buttons"></div>
+            </div>
+            <div class="filter-group">
+                <h3>Search</h3>
+                <input type="text" id="search-bar" placeholder="Search by name or skill description...">
+            </div>
+        </div>
+
+        <div id="weapon-list"></div>
+
+        <div id="weapon-hover-card">
+            <div class="card-header">
+                <img id="card-icon" src="" alt="Weapon Icon">
+                <div class="card-title-info">
+                    <div id="card-name"></div>
+                    <div id="card-rarity-type"></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="card-main-attribute"></div>
+                <div id="card-secondary-stat"></div>
+                <div id="card-passive-skill-name"></div>
+                <div id="card-passive-skill-description"></div>
+                <div id="card-description"></div>
+            </div>
+            <div class="card-footer">
+                <div id="card-atk-level"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 by vge. Not affiliated with Arknights: Endfield.</p>
+        <p>
+            <a href="https://github.com/your-repo" target="_blank">
+                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+                GitHub Repo
+            </a>
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const weaponList = document.getElementById('weapon-list');
+            const typeFilters = document.getElementById('type-filters');
+            const attributeFilters = document.getElementById('attribute-filters');
+            const secondaryFilters = document.getElementById('secondary-filters');
+            const essenceFilters = document.getElementById('essence-filters');
+            const searchBar = document.getElementById('search-bar');
+            const themeToggle = document.getElementById('theme-toggle');
+
+            let weapons = [];
+            let filters = {
+                type: null,
+                attribute: null,
+                secondary: null,
+                essence: null,
+                search: ''
+            };
+
+            // Hover state management
+            let hoverTimeout = null;
+            let isCardPinned = false;
+
+            // Theme toggle
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.body.classList.remove('light-mode');
+                } else {
+                    document.body.classList.add('light-mode');
+                }
+            };
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = localStorage.getItem('theme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+
+            // Load initial theme
+            applyTheme(localStorage.getItem('theme') || 'dark');
+
+
+            fetch('weaponData.json')
+                .then(response => response.json())
+                .then(data => {
+                    weapons = data;
+                    populateFilters(data);
+                    renderWeapons(data);
+                });
+
+            function populateFilters(data) {
+                const types = [...new Set(data.map(w => w.type))];
+                const attributes = [...new Set(data.flatMap(w => w.attributeStats))];
+                const secondaries = [...new Set(data.flatMap(w => w.secondaryStats))];
+                const essences = [...new Set(data.map(w => w.essenceSkillStat).filter(Boolean))];
+
+                createFilterButtons(typeFilters, types, 'type');
+                createFilterButtons(attributeFilters, attributes, 'attribute');
+                createFilterButtons(secondaryFilters, secondaries, 'secondary');
+                createFilterButtons(essenceFilters, essences, 'essence');
+            }
+
+            function createFilterButtons(container, items, filterType) {
+                items.sort().forEach(item => {
+                    const button = document.createElement('button');
+                    button.textContent = item;
+                    button.dataset.filter = item;
+                    button.addEventListener('click', () => {
+                        const currentActive = container.querySelector('.active');
+                        if (currentActive) {
+                            currentActive.classList.remove('active');
+                        }
+
+                        if (filters[filterType] === item) {
+                            filters[filterType] = null;
+                        } else {
+                            button.classList.add('active');
+                            filters[filterType] = item;
+                        }
+                        applyFilters();
+                    });
+                    container.appendChild(button);
+                });
+            }
+            
+            searchBar.addEventListener('input', (e) => {
+                filters.search = e.target.value.toLowerCase();
+                applyFilters();
+            });
+
+            function applyFilters() {
+                let filteredWeapons = [...weapons];
+
+                if (filters.type) {
+                    filteredWeapons = filteredWeapons.filter(w => w.type === filters.type);
+                }               
+                if (filters.attribute) {
+                    filteredWeapons = filteredWeapons.filter(w => w.attributeStats.includes(filters.attribute));
+                }
+                if (filters.secondary) {
+                    filteredWeapons = filteredWeapons.filter(w => w.secondaryStats.includes(filters.secondary));
+                }
+                if (filters.essence) {
+                    filteredWeapons = filteredWeapons.filter(w => w.essenceSkillStat === filters.essence);
+                }
+                if (filters.search) {
+                    filteredWeapons = filteredWeapons.filter(w => 
+                        w.name.toLowerCase().includes(filters.search) ||
+                        w.skills.some(s => s.description.toLowerCase().includes(filters.search))
+                    );
+                }
+
+                renderWeapons(filteredWeapons);
+            }
+
+            function renderWeapons(weaponsToRender) {
+                // Sort by rarity (descending) then by name (ascending)
+                const sortedWeapons = [...weaponsToRender].sort((a, b) => {
+                    if (b.rarity !== a.rarity) {
+                        return b.rarity - a.rarity;
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+
+                weaponList.innerHTML = '';
+                sortedWeapons.forEach(weapon => {
+                    const weaponDiv = document.createElement('div');
+                    weaponDiv.className = `weapon-item rarity-${weapon.rarity}`;
+                    weaponDiv.dataset.weaponId = weapon.id;
+
+                    // Add hover event listeners with delay
+                    weaponDiv.addEventListener('mouseenter', (e) => handleWeaponHover(weapon, e, weaponDiv));
+                    weaponDiv.addEventListener('mouseleave', handleWeaponHoverOut);
+
+                    // Add click event listener
+                    weaponDiv.addEventListener('click', (e) => handleWeaponClick(weapon, e, weaponDiv));
+
+                    const icon = document.createElement('img');
+                    icon.className = 'weapon-icon';
+                    const formattedWeaponName = weapon.name.replace(/ /g, '_').replace(/:/g, '').replace(/'/g, '');
+                    icon.src = `weapon_icons/${formattedWeaponName}_icon.png`;
+                    icon.alt = weapon.name;
+
+                    const name = document.createElement('div');
+                    name.className = 'weapon-name';
+                    name.textContent = weapon.name;
+
+                    weaponDiv.appendChild(icon);
+                    weaponDiv.appendChild(name);
+                    weaponList.appendChild(weaponDiv);
+                });
+            }
+
+            // Hover Card Logic
+            const hoverCard = document.getElementById('weapon-hover-card');
+            const cardIcon = document.getElementById('card-icon');
+            const cardName = document.getElementById('card-name');
+            const cardRarityType = document.getElementById('card-rarity-type');
+            const cardDescription = document.getElementById('card-description');
+            const cardAtkLevel = document.getElementById('card-atk-level');
+            const cardMainAttribute = document.getElementById('card-main-attribute');
+            const cardSecondaryStat = document.getElementById('card-secondary-stat');
+            const cardPassiveSkillName = document.getElementById('card-passive-skill-name');
+            const cardPassiveSkillDescription = document.getElementById('card-passive-skill-description');
+
+            let currentOpenCardWeaponId = null;
+
+            function handleWeaponHover(weapon, event, weaponDiv) {
+                if (isCardPinned && currentOpenCardWeaponId === weapon.id) {
+                    // Card is already pinned for this weapon, do nothing
+                    return;
+                }
+
+                // Clear any existing timeout
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                }
+
+                // Set a timeout to show the card after 400ms
+                hoverTimeout = setTimeout(() => {
+                    if (!isCardPinned) {
+                        showWeaponCard(weapon, weaponDiv);
+                        currentOpenCardWeaponId = weapon.id;
+                    }
+                }, 400);
+            }
+
+            function handleWeaponHoverOut() {
+                // Clear the timeout if user moves away before 400ms
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = null;
+                }
+
+                // Only hide the card if it's not pinned
+                if (!isCardPinned) {
+                    closeWeaponCard();
+                }
+            }
+
+            function handleWeaponClick(weapon, event, weaponDiv) {
+                event.stopPropagation();
+
+                // Clear any hover timeout
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = null;
+                }
+
+                if (currentOpenCardWeaponId === weapon.id && isCardPinned) {
+                    // If clicking the same weapon that's pinned, unpin and close
+                    isCardPinned = false;
+                    closeWeaponCard();
+                } else {
+                    // Pin the card for this weapon
+                    isCardPinned = true;
+                    showWeaponCard(weapon, weaponDiv);
+                    currentOpenCardWeaponId = weapon.id;
+                }
+            }
+
+            function showWeaponCard(weapon, weaponDiv) {
+                populateCard(weapon);
+                hoverCard.style.visibility = 'visible';
+                hoverCard.style.opacity = '1';
+                positionCard(weaponDiv);
+            }
+
+            function populateCard(weapon) {
+                cardIcon.src = `weapon_icons/${weapon.name.replace(/ /g, '_').replace(/:/g, '').replace(/'/g, '')}_icon.png`;
+                cardIcon.alt = weapon.name;
+                cardIcon.className = `rarity-${weapon.rarity}`;
+                cardName.textContent = weapon.name;
+                cardRarityType.textContent = `Rarity: ${weapon.rarity}* Type: ${weapon.type}`;
+                
+                // Populate Main Attribute, Secondary Stat, Passive Skill
+                if (weapon.skills && weapon.skills.length >= 3) {
+                    cardMainAttribute.innerHTML = `<strong>Main Attribute:</strong> ${weapon.skills[0].name}`;
+                    cardSecondaryStat.innerHTML = `<strong>Secondary Stat:</strong> ${weapon.skills[1].name}`;
+                    cardPassiveSkillName.innerHTML = `<strong>Passive Skill:</strong> ${weapon.skills[2].name}`;
+                    cardPassiveSkillDescription.innerHTML = weapon.skills[2].description.replace(/\n/g, '<br>');
+                } else if (weapon.skills && weapon.skills.length === 2) {
+                    cardMainAttribute.innerHTML = `<strong>Main Attribute:</strong> ${weapon.skills[0].name}`;
+                    cardSecondaryStat.innerHTML = '';
+                    cardPassiveSkillName.innerHTML = `<strong>Passive Skill:</strong> ${weapon.skills[1].name}`;
+                    cardPassiveSkillDescription.innerHTML = weapon.skills[1].description.replace(/\n/g, '<br>');
+                } else {
+                    cardMainAttribute.innerHTML = '<strong>Main Attribute:</strong> N/A';
+                    cardSecondaryStat.innerHTML = '';
+                    cardPassiveSkillName.innerHTML = '<strong>Passive Skill:</strong> N/A';
+                    cardPassiveSkillDescription.innerHTML = '';
+                }
+
+                // Populate Description
+                cardDescription.innerHTML = weapon.description.replace(/\n/g, '<br>');
+
+                // Placeholder for ATK stats and level
+                cardAtkLevel.textContent = 'ATK: [Value] Level: [Value]';
+            }
+
+            function positionCard(targetElement) {
+                const rect = targetElement.getBoundingClientRect();
+                const cardWidth = hoverCard.offsetWidth;
+                const cardHeight = hoverCard.offsetHeight;
+
+                let x = rect.left + window.scrollX;
+                let y = rect.top + window.scrollY;
+
+                // Try to position to the right
+                if (x + rect.width + cardWidth + 20 < window.innerWidth + window.scrollX) {
+                    x += rect.width + 10;
+                } 
+                // Or to the left
+                else if (x - cardWidth - 20 > window.scrollX) {
+                    x -= cardWidth + 10;
+                }
+                // Or center below
+                else {
+                    x = rect.left + window.scrollX + (rect.width / 2) - (cardWidth / 2);
+                    y += rect.height + 10;
+                }
+
+                // Adjust if it goes off screen vertically
+                if (y + cardHeight > window.innerHeight + window.scrollY) {
+                    y = window.innerHeight + window.scrollY - cardHeight - 10;
+                    if (y < window.scrollY) y = window.scrollY + 10;
+                }
+                if (y < window.scrollY) y = window.scrollY + 10;
+
+                hoverCard.style.left = `${x}px`;
+                hoverCard.style.top = `${y}px`;
+            }
+
+            function closeWeaponCard() {
+                hoverCard.style.visibility = 'hidden';
+                hoverCard.style.opacity = '0';
+                currentOpenCardWeaponId = null;
+            }
+
+            // Close card when clicking outside
+            document.addEventListener('click', (event) => {
+                if (isCardPinned && !hoverCard.contains(event.target) && !event.target.closest('.weapon-item')) {
+                    isCardPinned = false;
+                    closeWeaponCard();
+                }
+            });
+
+            // Also close card when clicking on the card itself (optional)
+            hoverCard.addEventListener('mouseenter', () => {
+                // Keep the card open when hovering over it
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                }
+            });
+
+            hoverCard.addEventListener('mouseleave', () => {
+                // Close card when leaving it, if not pinned
+                if (!isCardPinned) {
+                    closeWeaponCard();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

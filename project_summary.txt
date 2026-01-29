@@ -1,0 +1,18 @@
+
+    Project: Arknights Endfield Weapon Data Processor
+
+    This project processes the raw JSON data from the EndfieldData repository to create a structured database of weapons.
+
+    What this script does:
+    1.  Loads `WeaponBasicTable.json` for base weapon information.
+    2.  Loads `I18nTextTable_EN.json` to map localization IDs to English text for names and descriptions.
+    3.  Loads `SkillPatchTable.json` to find details about weapon skills and attributes.
+    4.  It iterates through each weapon, extracts key information (ID, name, description, rarity, type), and resolves skill/attribute names and descriptions. It also extracts detailed attribute data (e.g., STR +16) from the 'blackboard' information within the skill data.
+    5.  It categorizes skills into "Essence Skill Stats", "Secondary Stats", and "Attribute Stats" based on their names, and adds them to the `essenceSkillStat`, `secondaryStats`, and `attributeStats` fields, respectively.
+    6.  A placeholder `logoUrl` field is added to each weapon entry for future use.
+    7.  The final structured data is saved to `weaponData.json`.
+
+    Next Steps:
+    - You can now use the `weaponData.json` file to build your smart filter application.
+    - The `logoUrl` fields can be manually or programmatically updated with links to weapon images.
+    
